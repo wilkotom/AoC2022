@@ -61,7 +61,7 @@ impl<T: Ord + PartialOrd> PartialOrd for Coordinate<T> where T: std::marker::Cop
     }
 }
 
-impl<T: Integer + Copy> Coordinate<T>  {
+impl<T: Integer + Copy> Coordinate<T> {
     pub fn neighbours(&self) -> Vec<Self> {
         vec![ Coordinate{x: self.x - num::one(), y: self.y},
               Coordinate{x: self.x + num::one(), y: self.y},
@@ -203,8 +203,6 @@ impl<T: Integer + Copy> Coordinate3d<T> {
     pub fn manhattan_distance(&self, other: &Self) -> T  {
         self.x.max(other.x) - self.x.min(other.x) + self.y.max(other.y) - self.y.min(other.y) + self.z.max(other.z) - self.z.min(other.z)
     }
-
-
 }
 
 /* Generic struct used to select an item based on a minimum score.
@@ -217,17 +215,16 @@ pub struct ScoredItem<N, T> {
     pub item: T
 }
 
-impl<N: PartialEq + Ord + PartialOrd, T: PartialEq + Ord + PartialOrd> Ord for ScoredItem<N, T> {
+impl<N:  Ord + PartialOrd, T: Ord + PartialOrd> Ord for ScoredItem<N, T> {
     fn cmp(&self, other: &ScoredItem<N, T>) -> Ordering {
         (&other.cost, &other.item).cmp(&(&self.cost, &self.item))
     }
 }
 
-impl<N: PartialEq + Ord + PartialOrd, T: PartialEq + Ord + PartialOrd> PartialOrd for ScoredItem<N, T> {
+impl<N: Ord+ PartialOrd, T: Ord + PartialOrd> PartialOrd for ScoredItem<N, T> {
     fn partial_cmp(&self, other: &ScoredItem<N, T>) -> Option<Ordering> {
         Some(self.cmp(other))
     }
-
 }
 
 #[cfg(test)]
@@ -366,7 +363,6 @@ mod tests {
         assert!(first < second);
         assert!(first < third);
         assert!(second < third);
-
     }
 
     #[test]
@@ -391,6 +387,5 @@ mod tests {
         assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:1 }), 1);
         assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:-1}), 1);
         assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:1,  y:0, z:-1}), 2);
-
     }
 }
