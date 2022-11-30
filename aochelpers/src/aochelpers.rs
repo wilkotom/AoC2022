@@ -61,7 +61,7 @@ impl<T: Ord + PartialOrd> PartialOrd for Coordinate<T> where T: std::marker::Cop
     }
 }
 
-impl<T: Integer + Copy> Coordinate<T> {
+impl<T: Integer + Copy> Coordinate<T>  {
     pub fn neighbours(&self) -> Vec<Self> {
         vec![ Coordinate{x: self.x - num::one(), y: self.y},
               Coordinate{x: self.x + num::one(), y: self.y},
@@ -93,6 +93,11 @@ impl<T: Integer + Copy> Coordinate<T> {
             Coordinate{x: self.x - num::one(), y: self.y + num::one()}]
 
     }
+
+    pub fn manhattan_distance(&self, other: &Self) -> T  {
+        self.x.max(other.x) - self.x.min(other.x) + self.y.max(other.y) - self.y.min(other.y)
+    }
+    
 }
 
 /* Standard 3D Cartesian Coordinate. Also used all over the place */
@@ -194,6 +199,11 @@ impl<T: Integer + Copy> Coordinate3d<T> {
 
         ]
     }
+
+    pub fn manhattan_distance(&self, other: &Self) -> T  {
+        self.x.max(other.x) - self.x.min(other.x) + self.y.max(other.y) - self.y.min(other.y) + self.z.max(other.z) - self.z.min(other.z)
+    }
+
 
 }
 
@@ -356,6 +366,31 @@ mod tests {
         assert!(first < second);
         assert!(first < third);
         assert!(second < third);
+
+    }
+
+    #[test]
+    fn manhattan_distance() {
+        assert_eq!(Coordinate{x:0,  y:0 }.manhattan_distance(&Coordinate{x:0,  y:0}), 0);
+        assert_eq!(Coordinate{x:0,  y:0 }.manhattan_distance(&Coordinate{x:1,  y:1}), 2);
+        assert_eq!(Coordinate{x:1,  y:1 }.manhattan_distance(&Coordinate{x:0,  y:0}), 2);
+        assert_eq!(Coordinate{x:0,  y:0 }.manhattan_distance(&Coordinate{x:-1, y:0}), 1);
+        assert_eq!(Coordinate{x:-1, y:0 }.manhattan_distance(&Coordinate{x:0,  y:0}), 1);
+        assert_eq!(Coordinate{x:-1, y:-1}.manhattan_distance(&Coordinate{x:0,  y:0}), 2);
+    }
+
+    #[test]
+    fn manhattan_distance_3d() {
+        assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:0 }), 0);
+        assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:1,  y:1, z:0 }), 2);
+        assert_eq!(Coordinate3d{x:1,  y:1,  z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:0 }), 2);
+        assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:-1, y:0, z:0 }), 1);
+        assert_eq!(Coordinate3d{x:-1, y:0,  z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:0 }), 1);
+        assert_eq!(Coordinate3d{x:-1, y:-1, z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:0 }), 2);
+        assert_eq!(Coordinate3d{x:1,  y:1,  z:1}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:0 }), 3);
+        assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:1 }), 1);
+        assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:0,  y:0, z:-1}), 1);
+        assert_eq!(Coordinate3d{x:0,  y:0,  z:0}.manhattan_distance(&Coordinate3d{x:1,  y:0, z:-1}), 2);
 
     }
 }
