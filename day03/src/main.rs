@@ -24,38 +24,14 @@ fn part1(data:&str) -> i32 {
 
 fn part2(data:&str) -> i32 {
     let elves: Vec<HashSet<char>> = data.split('\n').map(|l| l.chars().collect()).collect();
-    let mut identified: HashSet<usize> = HashSet::new();
     let mut score = 0;
-    'first: for (i, first_elf) in elves.iter().enumerate() {
-        if identified.contains(&i) {
-            continue;
-        }
-        for (j, mid_elf) in elves.iter().enumerate().skip(i+1) {
-            if identified.contains(&j) {
-                continue;
-            }
-            let first_two = first_elf.intersection(mid_elf).copied().collect::<HashSet<_>>();
-            if first_two.is_empty() {
-                continue;
-            }
-            for (k, last_elf) in elves.iter().enumerate().skip(i+2) {
-                if identified.contains(&k) {
-                    continue;
-                }
-                let all_three = first_two.intersection(last_elf).collect::<HashSet<_>>();
-                if all_three.len() == 1{
-                    if let Some(c) = all_three.iter().next() {
-                        score += if c.is_lowercase() {
-                            **c as i32 - 96
-                        } else {
-                            **c as i32 - 38
-                        };
-                        identified.extend([i, j, k].iter());
-                        continue 'first;
-                    }
-                }
-            }
-        }
+    for group in elves.chunks(3) {
+        let c = *group[0].intersection(&group[1]).copied().collect::<HashSet<_>>().intersection(&group[2]).next().unwrap();
+        score += if c.is_lowercase() {
+            c as i32 - 96
+        } else {
+            c as i32 - 38
+        };
     }
     score
 }
