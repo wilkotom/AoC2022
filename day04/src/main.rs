@@ -9,11 +9,19 @@ struct SectionAssignment {
   end: i32,
 }
 
+#[derive(Display, FromStr, PartialEq, Debug)]
+#[display("{left},{right}")]
+struct ElfPair {
+  left: SectionAssignment,
+  right: SectionAssignment,
+}
+
 impl SectionAssignment {
-    fn contains (&self,other: &Self) -> bool {
+    fn contains (&self, other: &Self) -> bool {
         self.start <= other.start && self.end >= other.end
     }
-    fn overlap(&self,other: &Self) -> Option<Self> {
+
+    fn overlap(&self, other: &Self) -> Option<Self> {
         if self.end < other.start || other.end < self.start {
             None
         } else {
@@ -31,12 +39,9 @@ fn main() -> Result<(), Error> {
 
 fn solve(data:&str) -> (i32, i32) {
     let (mut part1, mut part2) = (0,0);
-    for line in data.split('\n') {
-        let mut assignments = line.split(',').map(|x| x.parse::<SectionAssignment>().unwrap());
-        let first = assignments.next().unwrap();
-        let second = assignments.next().unwrap();
-        part1 += (first.contains(&second) || second.contains(&first)) as i32;
-        part2 += first.overlap(&second).is_some() as i32;
+    for elf_pair in data.split('\n').map(|l| l.parse::<ElfPair>().unwrap()) {
+        part1 += (elf_pair.left.contains(&elf_pair.right) || elf_pair.right.contains(&elf_pair.left)) as i32;
+        part2 += elf_pair.left.overlap(&elf_pair.right).is_some() as i32;
     }
     (part1, part2)
 }
@@ -44,7 +49,6 @@ fn solve(data:&str) -> (i32, i32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     const DATA: &str = "2-4,6-8
 2-3,4-5
 5-7,7-9
