@@ -57,7 +57,6 @@ fn main() ->  Result<(), Error>  {
     let (part1, part2) = play_games(&data);
     println!("Part 1: {}", part1);
     println!("Part 2: {}", part2);
-
     Ok(())
 }
 
@@ -120,8 +119,8 @@ mod tests {
 
     #[test]
     fn test_rock_paper_scissors() {
-        let (part1_res, part2_res) =play_games(DATA);
-        assert_eq!( part1_res, 15);
-        assert_eq!( part2_res, 12);
+        let (part1_res, part2_res) = play_games(DATA);
+        assert_eq!(part1_res, 15);
+        assert_eq!(part2_res, 12);
     }
 }
