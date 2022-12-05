@@ -4,7 +4,6 @@ fn main() -> Result<(), Error> {
     let data = std::fs::read_to_string("./day01/input.txt")?;
     let (part1, part2) = solution(&data);
     println!("Part 1: {:?}\nPart 2: {:?}", part1, part2);
-
     Ok(())
 }
 
