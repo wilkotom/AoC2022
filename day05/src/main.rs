@@ -51,13 +51,7 @@ fn solution(mut cranes:[Vec<char>; 10], instructions: Vec<CraneMove>, part2: boo
         }
         cranes[instruction.destination-1].append(&mut moved_crates);
     }
-    let mut result = String::new();
-    for crane in cranes.iter() {
-        if let Some(c) = crane.iter().last() {
-            result.push(*c);
-        }
-    }
-    result
+    cranes.iter().filter_map(|c| c.last()).collect::<String>()
 }
 
 
@@ -81,6 +75,7 @@ move 1 from 1 to 2";
         let mut data = DATA.split("\n\n");
         let cranes = parse_cranes(data.next().unwrap());
         let instructions = parse_instructions(data.next().unwrap());
+        let result = 
         assert_eq!(solution(cranes,instructions, false), "CMZ");
     }
 
