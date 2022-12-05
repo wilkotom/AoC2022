@@ -15,8 +15,8 @@ fn main() -> Result<(), Error> {
     let mut data = in_file.split("\n\n");
     let cranes = parse_cranes(data.next().unwrap());
     let instructions = parse_instructions(data.next().unwrap());
-    println!("{}", solution(cranes.clone(), instructions.clone(), false));
-    println!("{}", solution(cranes, instructions, true));
+    println!("Part 1: {}", solution(cranes.clone(), instructions.clone(), false));
+    println!("Part 2: {}", solution(cranes, instructions, true));
     Ok(())
 }
 
@@ -39,18 +39,19 @@ fn parse_instructions(instructions: &str) -> Vec<CraneMove> {
     instructions.split('\n').map(|x| x.parse::<CraneMove>().unwrap()).collect()
 }
 
-fn solution(mut cranes:[Vec<char>; 10], instructions: Vec<CraneMove>, part2: bool) -> String {
+fn solution(mut cranes:[Vec<char>; 10], instructions: Vec<CraneMove>, part1: bool) -> String {
     for instruction in instructions {
-        let mut moved_crates = Vec::new();
-        for _ in 0..instruction.quantity {
-            let cargo_crate = cranes[instruction.origin -1].pop().unwrap();
-            moved_crates.push(cargo_crate)
+        if part1 {
+            for _ in 0..instruction.quantity {
+                let cargo_crate = cranes[instruction.origin -1].pop().unwrap();
+                cranes[instruction.destination-1].push(cargo_crate)
+            }
+        } else {
+            let mut moved_crates = cranes[instruction.origin -1].split_off(cranes[instruction.origin -1].len() - instruction.quantity);
+            cranes[instruction.destination-1].append(&mut moved_crates);
         }
-        if part2 {
-            moved_crates.reverse();
-        }
-        cranes[instruction.destination-1].append(&mut moved_crates);
     }
+    
     cranes.iter().filter_map(|c| c.last()).collect::<String>()
 }
 
@@ -75,8 +76,7 @@ move 1 from 1 to 2";
         let mut data = DATA.split("\n\n");
         let cranes = parse_cranes(data.next().unwrap());
         let instructions = parse_instructions(data.next().unwrap());
-        let result = 
-        assert_eq!(solution(cranes,instructions, false), "CMZ");
+        assert_eq!(solution(cranes,instructions, true), "CMZ");
     }
 
     #[test]
@@ -84,6 +84,6 @@ move 1 from 1 to 2";
         let mut data = DATA.split("\n\n");
         let cranes = parse_cranes(data.next().unwrap());
         let instructions = parse_instructions(data.next().unwrap());
-        assert_eq!(solution(cranes,instructions, true), "MCD");
+        assert_eq!(solution(cranes,instructions, false), "MCD");
     }
 }
