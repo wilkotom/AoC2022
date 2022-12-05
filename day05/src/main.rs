@@ -1,7 +1,6 @@
 use std::io::Error;
 use parse_display::{Display, FromStr};
 
-
 #[derive(Display, FromStr, PartialEq, Debug, Copy, Clone)]
 #[display("move {quantity} from {origin} to {destination}")]
 struct CraneMove{
@@ -53,8 +52,6 @@ fn solution(mut stacks:[Vec<char>; 9], instructions: &Vec<CraneMove>, part1: boo
     }
     stacks.iter().filter_map(|c| c.last()).collect::<String>()
 }
-
-
 
 #[cfg(test)]
 mod tests {
