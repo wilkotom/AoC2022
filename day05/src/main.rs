@@ -10,12 +10,6 @@ struct CraneMove{
     destination: usize
 }
 
-#[derive(Display, FromStr, PartialEq, Debug, Copy, Clone)]
-#[display("{label}")]
-struct CargoCrate{
-    label: char
-}
-
 fn main() -> Result<(), Error> {
     let in_file = std::fs::read_to_string("./day05/input.txt")?;
     let mut data = in_file.split("\n\n");
@@ -26,8 +20,8 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn parse_cranes(starting_state: &str) -> Vec<Vec<char>> {
-    let mut cranes: Vec<Vec<char>> = vec![vec![]; 11];
+fn parse_cranes(starting_state: &str) -> [Vec<char>; 10] {
+    let mut cranes: [Vec<char>; 10] = Default::default();
     for line in starting_state.split('\n') {
         let mut pos = 1;
         while let Some(c) = line.chars().nth(pos) {
@@ -45,7 +39,7 @@ fn parse_instructions(instructions: &str) -> Vec<CraneMove> {
     instructions.split('\n').map(|x| x.parse::<CraneMove>().unwrap()).collect()
 }
 
-fn solution(mut cranes:Vec<Vec<char>>, instructions: Vec<CraneMove>, part2: bool) -> String {
+fn solution(mut cranes:[Vec<char>; 10], instructions: Vec<CraneMove>, part2: bool) -> String {
     for instruction in instructions {
         let mut moved_crates = Vec::new();
         for _ in 0..instruction.quantity {
