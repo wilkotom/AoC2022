@@ -113,13 +113,12 @@ $ ls
     #[test]
     fn test_parts (){
         let mut instruction_stack = DATA.lines().rev().collect::<Vec<_>>();
-        let tree = parse_tree(&mut instruction_stack);
+        let tree = parse_tree(&mut instruction_stack).unwrap();
         let tree_size = tree.total_size();
         assert_eq!(tree_size, 48381165);
         assert_eq!(tree.part1(), 95437);
         let needed = 30000000 - (70000000 - tree_size);
         assert_eq!(tree.part2(needed), Some(24933642));
-
-    }
+     }
 
 }
