@@ -1,94 +1,85 @@
-use std::{collections::HashMap, error::Error};
+use std::error::Error;
 use parse_display::{Display, FromStr};
+use anyhow::{anyhow, Result};
 
-struct FileSystem{
-    tree: HashMap<String,Directory>
+
+#[derive(Debug)]
+struct Directory {
+    _name: String,
+    files: Vec<FileMetadata>,
+    children: Vec<Directory>
 }
 
-impl FileSystem {
-    fn dir_size(&self, dir: &String) -> Option<i64> {
-        if let Some(dir) = self.tree.get(dir) {
-            let file_total = dir.files.iter()
-                    .map(|f| f.size)
-                    .sum::<i64>();
-            let dir_total = dir.children.iter().map(|d| self.dir_size(d).unwrap_or(0)).sum::<i64>();
-    
-            Some(file_total + dir_total)
-        } else {
+impl Directory {
+    fn total_size(&self) -> i64 {
+        let files = self.files.iter().map(|f| f.size).sum::<i64>();
+        let dirs = self.children.iter().map(|d| d.total_size()).sum::<i64>();
+        files + dirs
+    }
+
+    fn part1(&self) -> i64 {
+        let size = self.total_size();
+        self.children.iter().map(|d| d.part1()).sum::<i64>() + if size < 100000 {size} else {0}
+    }
+
+    fn part2(&self, desired: i64) -> Option<i64> {
+        let size = self.total_size();
+        if size < desired {
             None
+        } else if let Some(smaller) = self.children.iter().filter_map(|d| d.part2(desired)).min() {
+            Some(smaller)
+        } else {
+            Some(size)
         }
     }
 }
 
-#[derive(Debug,Clone)]
-struct Directory {
-    files: Vec<FileMetadata>,
-    children: Vec<String>
-}
-
-
-#[derive(Display, FromStr, PartialEq, Debug, Clone)]
-#[display("{size} {name}")]
+#[derive(Display, FromStr, Debug)]
+#[display("{size} {_name}")]
 struct FileMetadata {
-    name: String,
+    _name: String,
     size: i64
 }
 
 
 fn main() -> Result<(), Box<dyn Error>> {
     let data = std::fs::read_to_string("./day07/input.txt")?;
-    let (part1, part2) = solve(&data);
-    println!("Part 1: {}\nPart 2: {}", part1, part2);
+    if let Ok((part1, part2)) = solve(&data) {
+        println!("Part 1: {}\nPart 2: {}", part1, part2);
+    }
     Ok(())
 }
 
-fn solve(data: &str) -> (i64, i64){
-    let fs = parse_tree(data);
-    let free_space = 70000000 - fs.dir_size(&String::from("")).unwrap();
-    let mut part1_total = 0;
-    let mut part2_answer = i64::MAX;
-    for dir in fs.tree.keys() {
-        if let Some(size) = fs.dir_size(dir){
-            if size <= 100000 {
-                part1_total += size
-            }
-            if free_space + size >= 30000000 {
-                part2_answer = part2_answer.min(size)
-            }
-        }
-    }
-    (part1_total, part2_answer)
+fn solve(data: &str) -> Result<(i64, i64)> {
+    let mut instruction_stack = data.lines().rev().collect::<Vec<_>>();
+    let tree = parse_tree(&mut instruction_stack)?;
+    let needed = 30000000 - (70000000 - tree.total_size());
+    Ok((tree.part1(), if let Some(n) = tree.part2(needed) {n} else {0}))
 }
 
-
-fn parse_tree(data:&str)  -> FileSystem {
-    let mut dir_stack = vec![];
-    let mut tree = HashMap::new();
-    for command in data[2..].split("\n$ ") {
-        if command == "cd /" {
-            dir_stack.clear();
-            dir_stack.push("");
-        } else if command == "cd .." {
-            dir_stack.pop();
-        } else if let Some(path) = command.strip_prefix("cd "){
-            dir_stack.push(path)
-        } else if command.starts_with("ls") {
-            let mut results = command.lines();
-            results.next();
-            let mut children = vec![];
-            let mut files = vec![];
-            for line in results {
-                if let Some(dirname) = line.strip_prefix("dir ") {
-                    children.push(format!("{}/{}", dir_stack.join("/"),dirname));
-                } else {
-                    files.push(line.parse::<FileMetadata>().unwrap());
-                }
+fn parse_tree(instructions: &mut Vec<&str>) -> Result<Directory> {
+    let instruction = instructions.pop().unwrap();
+    // Starts with "$ cd <blah>" to enter a new directory
+    // "$ cd .." indicates we've finished
+    if let Some(dirname) = instruction.strip_prefix("$ cd ") {
+        let mut next_instr = instructions.pop().unwrap_or("$ cd ..");
+        let mut files = vec![];
+        let mut children = vec![];
+        while next_instr != "$ cd .." {
+            if next_instr.starts_with("$ cd ") {
+                // going down a level, return the instruction to the stack for the 
+                // next level of recursion to consume
+                instructions.push(next_instr);
+                children.push(parse_tree(instructions)?);
+            } else if let Ok(file) = next_instr.parse::<FileMetadata>(){
+                files.push(file);
             }
-            tree.insert(dir_stack.join("/"),Directory { files, children });
-            
+            next_instr = instructions.pop().unwrap_or("$ cd ..");
         }
+        Ok(Directory { _name: dirname.to_string(), files, children })
+    } else {
+        Err(anyhow!("Can't identify CWD from: {:?}", instruction))
     }
-    FileSystem{tree}
 }
 
 #[cfg(test)]
@@ -120,18 +111,15 @@ $ ls
 ";
 
     #[test]
-    fn test_parser(){
-        let tree = parse_tree(DATA);
-        assert_eq!(tree.dir_size(&String::from("/a/e")), Some(584));
-        assert_eq!(tree.dir_size(&String::from("/a")), Some(94853));
-        assert_eq!(tree.dir_size(&String::from("/d")), Some(24933642));
-        assert_eq!(tree.dir_size(&String::from("")), Some(48381165));
-    }
-    #[test]
-    fn test_parts(){
-        let (part1, part2) = solve(DATA);
-        assert_eq!(part1, 95437);
-        assert_eq!(part2, 24933642);
+    fn test_parts (){
+        let mut instruction_stack = DATA.lines().rev().collect::<Vec<_>>();
+        let tree = parse_tree(&mut instruction_stack);
+        let tree_size = tree.total_size();
+        assert_eq!(tree_size, 48381165);
+        assert_eq!(tree.part1(), 95437);
+        let needed = 30000000 - (70000000 - tree_size);
+        assert_eq!(tree.part2(needed), Some(24933642));
 
     }
+
 }
