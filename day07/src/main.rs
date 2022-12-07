@@ -44,8 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn solve(data: &str) -> (i64, i64){
     let fs = parse_tree(data);
-    let disk_size = 70000000;
-    let used_space = disk_size - fs.dir_size(&String::from("")).unwrap();
+    let free_space = 70000000 - fs.dir_size(&String::from("")).unwrap();
     let mut part1_total = 0;
     let mut part2_answer = i64::MAX;
     for dir in fs.tree.keys() {
@@ -53,7 +52,7 @@ fn solve(data: &str) -> (i64, i64){
             if size <= 100000 {
                 part1_total += size
             }
-            if used_space + size >= 30000000 {
+            if free_space + size >= 30000000 {
                 part2_answer = part2_answer.min(size)
             }
         }
@@ -123,10 +122,10 @@ $ ls
     #[test]
     fn test_parser(){
         let tree = parse_tree(DATA);
-        assert_eq!(tree.dir_size(&String::from("//a/e")), Some(584));
-        assert_eq!(tree.dir_size(&String::from("//a")), Some(94853));
-        assert_eq!(tree.dir_size(&String::from("//d")), Some(24933642));
-        assert_eq!(tree.dir_size(&String::from("/")), Some(48381165));
+        assert_eq!(tree.dir_size(&String::from("/a/e")), Some(584));
+        assert_eq!(tree.dir_size(&String::from("/a")), Some(94853));
+        assert_eq!(tree.dir_size(&String::from("/d")), Some(24933642));
+        assert_eq!(tree.dir_size(&String::from("")), Some(48381165));
     }
     #[test]
     fn test_parts(){
