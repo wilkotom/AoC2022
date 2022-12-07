@@ -63,33 +63,33 @@ fn solve(data: &str) -> (i64, i64){
 
 
 fn parse_tree(data:&str)  -> FileSystem {
-let mut dir_stack = vec![];
-let mut tree = HashMap::new();
-for command in data[2..].split("\n$ ") {
-    if command == "cd /" {
-        dir_stack.clear();
-        dir_stack.push("");
-    } else if command == "cd .." {
-        dir_stack.pop();
-    } else if let Some(path) = command.strip_prefix("cd "){
-        dir_stack.push(path)
-    } else if command.starts_with("ls") {
-        let mut results = command.lines();
-        results.next();
-        let mut children = vec![];
-        let mut files = vec![];
-        for line in results {
-            if let Some(dirname) = line.strip_prefix("dir ") {
-                children.push(format!("{}/{}", dir_stack.join("/"),dirname));
-            } else {
-                files.push(line.parse::<FileMetadata>().unwrap());
+    let mut dir_stack = vec![];
+    let mut tree = HashMap::new();
+    for command in data[2..].split("\n$ ") {
+        if command == "cd /" {
+            dir_stack.clear();
+            dir_stack.push("");
+        } else if command == "cd .." {
+            dir_stack.pop();
+        } else if let Some(path) = command.strip_prefix("cd "){
+            dir_stack.push(path)
+        } else if command.starts_with("ls") {
+            let mut results = command.lines();
+            results.next();
+            let mut children = vec![];
+            let mut files = vec![];
+            for line in results {
+                if let Some(dirname) = line.strip_prefix("dir ") {
+                    children.push(format!("{}/{}", dir_stack.join("/"),dirname));
+                } else {
+                    files.push(line.parse::<FileMetadata>().unwrap());
+                }
             }
+            tree.insert(dir_stack.join("/"),Directory { files, children });
+            
         }
-        tree.insert(dir_stack.join("/"),Directory { files, children });
-        
     }
-}
-FileSystem{tree}
+    FileSystem{tree}
 }
 
 #[cfg(test)]
