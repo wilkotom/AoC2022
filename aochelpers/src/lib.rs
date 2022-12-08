@@ -1,5 +1,6 @@
-use std::{fmt::Display, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Ordering};
+use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Ordering, str::FromStr};
 use num::Integer;
+use hashbrown::HashMap;
 
 /* Standard 2D Cartesian Coordinate. Used all over the place */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -60,6 +61,16 @@ impl<T: Ord + PartialOrd> PartialOrd for Coordinate<T> where T: std::marker::Cop
         Some(self.cmp(other))
     }
 }
+
+impl<T: Copy + 'static> Coordinate<T> {
+    pub fn from<U: num::cast::AsPrimitive<T>>(other: Coordinate<U>) -> Coordinate<T> {
+        Coordinate {
+            x: other.x.as_(),
+            y: other.y.as_(),
+        }
+    }
+}
+
 
 impl<T: Integer + Copy> Coordinate<T> {
     pub fn neighbours(&self) -> Vec<Self> {
@@ -286,4 +297,22 @@ impl<N: Ord+ PartialOrd, T: Ord + PartialOrd> PartialOrd for ScoredItem<N, T> {
     fn partial_cmp(&self, other: &ScoredItem<N, T>) -> Option<Ordering> {
         Some(self.cmp(other))
     }
+}
+
+
+/* Parse a grid of single digit numbers into a HashMap<Coordinate, T> */
+
+pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where 
+        T: FromStr, 
+        <T as FromStr>::Err: Debug  {
+    let mut grid: HashMap<Coordinate<_>, T> = HashMap::new();
+
+    for (y, line) in data.split('\n').enumerate() {
+        for (x, c) in line.chars().enumerate(){
+            
+            grid.insert( Coordinate{x, y}, String::from(c).parse::<T>().unwrap());
+        }
+    }
+
+    grid
 }
