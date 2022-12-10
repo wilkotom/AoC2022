@@ -31,8 +31,8 @@ fn run_program(program: &[Instruction]) -> (i32, String) {
             part1_answer += (cycle_timer as i32 +1) * x_register;
         }
         display.push(
-        if (x_register - ((cycle_timer) % 40) as i32 ).abs() <=1 
-              {'█'}  else  {' '});
+            if (x_register - ((cycle_timer) % 40) as i32 ).abs() <=1 
+                    {'█'}  else  {' '});
         match line {
             Instruction::NoOp => {}
             Instruction::AddX(n) => {
