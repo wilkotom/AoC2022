@@ -33,7 +33,7 @@ fn solution(mut monkeys: Vec<Monkey>, cycles: usize, part1:bool) -> i128 {
     let mut inspection_count = vec![0_i128; monkeys.len()];
     let lcm_divisors:i128 = monkeys.iter().map(|m| m.test_divisor).product();
     /*  Part 2: to stop worry_level escalating to the point it can't be stored in a number, 
-        we need to truncate it. Because each monkey performs a predictable operation, 
+        we need to reduce it. Because each monkey performs a predictable operation, 
         addition or multiplication, there will be many numbers for which all monkeys behave 
         the same way.
 
@@ -43,7 +43,7 @@ fn solution(mut monkeys: Vec<Monkey>, cycles: usize, part1:bool) -> i128 {
 
         For each possible worry level, if f is the operation the monkey applies,
 
-        f(worry_level) % monkey_divisor == f(worry_level % lcm_divisorts) % monkey_divisor
+        f(worry_level) % monkey_divisor == f(worry_level) % lcm_divisors % monkey_divisor
 
         is guaranteed to hold true. 
     
@@ -53,7 +53,6 @@ fn solution(mut monkeys: Vec<Monkey>, cycles: usize, part1:bool) -> i128 {
         for i in 0.. monkeys.len() {
             let monkey = monkeys.get(i).unwrap().clone();
             for item in monkey.items {
-                // let item = monkey.items.pop_front().unwrap();
                 inspection_count[i] +=1;
                 let worry_level = (match monkey.operator {
                     Operation::Multiply => item * monkey.operatee,
