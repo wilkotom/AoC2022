@@ -1,5 +1,5 @@
 use std::{io::Error, collections::{HashMap, BinaryHeap, HashSet}};
-use aochelpers::{self, Coordinate, ScoredItem};
+use aochelpers::{Coordinate, ScoredItem};
 
 #[derive(Debug, Clone)]
 struct Mountain{
