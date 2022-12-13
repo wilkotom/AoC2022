@@ -1,4 +1,4 @@
-use std::{collections::BinaryHeap, io::Error, cmp::Ordering};
+use std::{io::Error, cmp::Ordering, str::FromStr, num::ParseIntError};
 
 #[derive(Debug,Clone, PartialEq, Eq)]
 enum Packet {
@@ -30,6 +30,38 @@ impl Ord for Packet {
     }
 }
 
+impl FromStr for Packet {
+    fn from_str(line: &str) ->  Result<Self, Self::Err> {
+
+        fn process_tokens(tokens: &mut Vec<&str>) -> Result<Vec<Packet>, ParseIntError> {
+            let mut result = Vec::new();
+            while !tokens.is_empty() {
+                match tokens.pop() {
+                    Some("]") => {
+                        return Ok(result);
+                    },
+                    Some("[") => {
+                        result.push(Packet::Packet(process_tokens(tokens)?));
+                    }
+                    Some("") => {}
+                    Some(n) => {
+                        result.push(Packet::Value(n.parse::<i32>()?));
+                    }
+                    None => unreachable!()
+                };
+            }
+            Ok(result)
+        }
+
+        let binding = line.replace('[', "[,").replace(']', ",]");
+        let mut tokens = binding.split(',').rev().collect::<Vec<_>>();
+        Ok(Packet::Packet(process_tokens(&mut tokens)?))
+    }
+        
+    type Err = ParseIntError;
+
+}
+
 impl PartialOrd for Packet {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -38,69 +70,41 @@ impl PartialOrd for Packet {
 
 fn main() -> Result<(), Error> {
     let data = std::fs::read_to_string("./day13/input.txt")?;
-    let part1 = part1(&data);
-    let part2 = part2(&data);
+    let part1 = part1(&data)?;
+    let part2 = part2(&data)?;
     println!("Part 1: {:?}", part1);
     println!("Part 2: {:?}", part2);
 
     Ok(())
 }
 
-fn part1(data: &str) -> usize {
+fn part1(data: &str) -> Result<usize,Error> {
     let mut total  = 0;
     for (i,pair) in data.split("\n\n").enumerate() {
         let mut lines =  pair.lines();
-        let left = parse_packet(lines.next().unwrap());
-        let right = parse_packet(lines.next().unwrap());
+        let left = lines.next().unwrap().parse::<Packet>().unwrap();
+        let right = lines.next().unwrap().parse::<Packet>().unwrap();
         if left < right {
             total += i+1
         }
     }
-    total
+    Ok(total)
 }
 
 
-fn part2(data: &str) -> usize {
-    let mut all_packets = Vec::new();
-    for line in data.lines() {
-        if !line.is_empty() {
-            all_packets.push(parse_packet(line));
-        }
-    }
-    all_packets.push(parse_packet("[[2]]"));
-    all_packets.push(parse_packet("[[6]]"));
+fn part2(data: &str) -> Result<usize,Error> {
+
+    let mut all_packets = data.lines().filter(|l| !l.is_empty()).map(|l| l.parse::<Packet>().unwrap()).collect::<Vec<_>>();
+    let sep_2 = "[[2]]".parse::<Packet>().unwrap();
+    let sep_6 = "[[6]]".parse::<Packet>().unwrap();
+    all_packets.push(sep_2.clone());
+    all_packets.push(sep_6.clone());
+
     all_packets.sort();
 
-    let pos_2 = all_packets.iter().position(|p| p == &parse_packet("[[2]]")).unwrap() +1; 
-    let pos_6 = all_packets.iter().position(|p| p == &parse_packet("[[6]]")).unwrap() +1; 
-    pos_2 * pos_6    
-}
-
-
-fn parse_packet(line: &str) -> Packet {
-    let binding = line.replace("[", "[,").replace("]", ",]");
-    let mut tokens = binding.split(',').rev().collect::<Vec<_>>();
-    Packet::Packet(process_tokens(&mut tokens))
-}
-    
-fn process_tokens(tokens: &mut Vec<&str>) -> Vec<Packet> {
-    let mut result = Vec::new();
-    while !tokens.is_empty() {
-        match tokens.pop() {
-            Some("]") => {
-                return result;
-            },
-            Some("[") => {
-                result.push(Packet::Packet(process_tokens(tokens)));
-            }
-            Some("") => {}
-            Some(n) => {
-                result.push(Packet::Value(n.parse::<i32>().unwrap()));
-            }
-            None => unreachable!()
-        };
-    }
-    result
+    let pos_2 = all_packets.iter().position(|p| p == &sep_2).unwrap() +1; 
+    let pos_6 = all_packets.iter().position(|p| p == &sep_6).unwrap() +1; 
+    Ok(pos_2 * pos_6)
 }
 
 #[cfg(test)]
@@ -134,12 +138,12 @@ mod tests {
     #[test]
     fn test_part1() {
     
-        assert_eq!(part1(DATA), 13);
+        assert_eq!(part1(DATA).unwrap(), 13);
     }
 
     #[test]
     fn test_part2() {
     
-        assert_eq!(part2(DATA), 140);
+        assert_eq!(part2(DATA).unwrap(), 140);
     }
 }
