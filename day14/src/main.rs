@@ -30,8 +30,7 @@ fn simulate_grain(area: &HashSet<Coordinate<i32>>, max_y: i32, part2: bool) -> O
     }
     while !area.contains(&Coordinate { x: grain.x, y: grain.y+1 }) || 
             !area.contains(&Coordinate { x: grain.x-1, y: grain.y+1 }) ||
-            !area.contains(&Coordinate { x: grain.x+1, y: grain.y+1 })
-            && grain.y < floor {
+            !area.contains(&Coordinate { x: grain.x+1, y: grain.y+1 }) {
         if grain.y == floor-1 {
             if part2 {
                 break;
