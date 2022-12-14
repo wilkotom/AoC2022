@@ -1,4 +1,5 @@
 use aochelpers::*;
+use hashbrown::HashMap;
 
 #[test]
 fn add_coordinates() {
@@ -258,3 +259,23 @@ fn intersection_entirely_bounded() {
     assert_eq!(r2.intersection(&r1), Some(expected));
 }
 
+#[test]
+fn single_number_grid() {
+    assert_eq!(parse_number_grid::<i32>("1"), HashMap::from([(Coordinate{x:0, y:0}, 1_i32)]))
+}
+
+#[test]
+fn empty_number_grid() {
+    assert_eq!(parse_number_grid::<i32>(""), HashMap::new())
+}
+
+#[test]
+fn number_grid_row() {
+    assert_eq!(parse_number_grid::<i32>("12"), HashMap::from([(Coordinate{x:0, y:0}, 1_i32), (Coordinate{x:1, y:0}, 2_i32)]))
+}
+
+
+#[test]
+fn number_grid_col() {
+    assert_eq!(parse_number_grid::<i32>("1\n2"), HashMap::from([(Coordinate{x:0, y:0}, 1_i32), (Coordinate{x:0, y:1}, 2_i32)]))
+}
