@@ -21,7 +21,6 @@ fn main() -> Result<(), Error> {
     let data = std::fs::read_to_string("./day15/input.txt")?;
     let part1 = solution(&data, 2000000);
     let part2 = solution2(&data, 4000000);
-
     println!("Part 1: {:?}\nPart 2: {:?}", part1, part2.unwrap());
     Ok(())
 }
@@ -43,31 +42,29 @@ fn solution(data: &str, y: i128) -> i128 {
         }
         total += sensors.iter().any(|(s,b)| candidate.manhattan_distance(s) < b.radius)as i128;
     }
-    println!("{}", total);
     total
 }
 
 
 fn solution2(data: &str, radius: i128) -> Option<i128> {
-    // SLOW. Because we know there's only one point where no beacons can reach in 
-    // our search space, it must by definition be just outside the radius of all beacons.
-    // Build a "circle" just outside each beacon's radius, then test each point in it
-    // to see if it's in range of no beacons.
-    let sensors = parse_lines(data);
-    let mut sensors_in_order = sensors.iter().collect::<Vec<_>>();
-    sensors_in_order.sort_by(|a,b| a.1.radius.cmp(&b.1.radius));
 
-    for (point, beacon) in sensors_in_order {
-        let circle = manhattan_circle(point, beacon.radius+1);
-        for point in circle.iter().filter(|p| p.x >=0 && p.x <= radius && p.y >=0 && p.y <= radius) {
-            if sensors.iter().all(|(s,b)| point.manhattan_distance(s) > b.radius) {
-                return Some(point.x * 4000000 + point.y);
+    let sensors = parse_lines(data);
+    for (i, (sensor, beacon)) in sensors.iter().enumerate() {
+        // Consider only sensors which have at least 1 other sensors exactly r1 + r2 +2 distance away
+        for (other, target) in sensors.iter().skip(i+1) {
+            if sensor != other && sensor.manhattan_distance(other) == beacon.radius + target.radius +2 {
+                let circle = manhattan_circle(sensor, beacon.radius+1);
+                for point in circle.iter().filter(|p| p.x >=0 && p.x <= radius && p.y >=0 && p.y <= radius) {
+                    if sensors.iter().all(|(s,b)| point.manhattan_distance(s) > b.radius) {
+                        return Some(point.x * 4000000 + point.y);
+                    }
+                }
             }
         }
     }
-
-    None
+    Some(0)
 }
+
 
 fn manhattan_circle(point: &Coordinate<i128>, radius: i128) -> Vec<Coordinate<i128>> {
 
