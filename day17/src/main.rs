@@ -22,11 +22,10 @@ fn rock_tetris(data: &str,  rounds: i128) -> i128 {
     let instructions = data.chars().collect::<Vec<_>>();
 
     let mut arena = HashSet::new();
-
+    let mut skylines = HashMap::new();
     let mut starting_y = 3;
     let mut round = 0;
     let mut inst_ptr = 0;
-    let mut flat_floor_cycles = HashMap::new();
 
     while round < rounds {
         
@@ -73,16 +72,44 @@ fn rock_tetris(data: &str,  rounds: i128) -> i128 {
             }
             inst_ptr +=1;
         }
+        for square in piece {
+            arena.insert(square);
+            if starting_y < square.y +4 {
+                starting_y = square.y +4;
+            } 
+        }
+
 
         // Cycle Detection. Look for a point at which we have:
-        // -  a flat floor (for the top of the pile, all X coordinates are filled)
+        // - a floor profile we've seen before 
         // - The instruction pointer is in the same place
+        // - The same piece has just been played
         // Measure the interval between two of these, use this to skip 
         // most of the one trillion rounds
-        
-        if (0..7).all(|x| arena.contains(&Coordinate{x, y: starting_y -4})) {
+        // Skip the first 1000 rounds as we seem to see some odd loops before 
+        // things stabilise
+        if round > 1000 {
+
+            let mut depths = vec![];
+            for x in 0..7 {
+                if arena.contains(&Coordinate{x, y: starting_y - 4}) {
+                    depths.push(0);
+                } else {
+                    let mut y = 1;
+                    while y < starting_y {
+                        if !arena.contains(&Coordinate{x, y: starting_y - 4 -y}) {
+                            y +=1;
+                        } else {
+                
+                            break;
+                        }
+                    }
+                    depths.push(y);
+                }
+            }
+
             let piece_index = round % pieces.len() as i128;
-            if let Some((first_match, height_to_first_match)) = flat_floor_cycles.get(&(piece_index, inst_ptr % instructions.len())) {
+            if let Some((first_match, height_to_first_match)) = skylines.get(&(depths.clone(), piece_index, inst_ptr % instructions.len())) {
                 let cycle_time = round - first_match;
                 let height_in_cycle = starting_y - 3 - height_to_first_match;
                 let cycles_after_first_match = (rounds - first_match) / cycle_time;
@@ -90,17 +117,12 @@ fn rock_tetris(data: &str,  rounds: i128) -> i128 {
                 let bookends = rock_tetris(data, first_match + additional_rounds);
                 return cycles_after_first_match * height_in_cycle + bookends;
             } else {
-                flat_floor_cycles.insert((piece_index, inst_ptr % instructions.len()), (round, starting_y - 3));
+                skylines.insert((depths, piece_index, inst_ptr % instructions.len()), (round,starting_y - 3));
             }
         }
 
         round +=1;
-        for square in piece {
-            arena.insert(square);
-            if starting_y < square.y +4 {
-                starting_y = square.y +4;
-            } 
-        }
+
     }
     (starting_y - 3) as i128
 }
