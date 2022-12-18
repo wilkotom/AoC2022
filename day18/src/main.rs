@@ -1,4 +1,4 @@
-use std::{collections::{HashSet, VecDeque}, io::Error};
+use std::{collections::{HashSet, VecDeque, HashMap}, io::Error};
 use aochelpers::{Coordinate3d, Cuboid};
 
 fn main() -> Result<(), Error> {
@@ -17,8 +17,8 @@ fn solution(data: &str) -> (usize,usize) {
         cubes.insert(cube);
     }
 
-    let visible_faces =  cubes.len() * 6 - cubes.iter().map(|c| c.neighbours().iter().filter(|c| cubes.contains(c)).count()).sum::<usize>();
-    let part1 = visible_faces;
+    let part1 =  visible_faces(&cubes);
+
     let mut cloud = cubes.clone();
     let bounding_box = Cuboid{
         top_left_back: Coordinate3d { x: cubes.iter().map(|c| c.x).min().unwrap(),  
@@ -53,10 +53,15 @@ fn solution(data: &str) -> (usize,usize) {
             }
         }
     }
-    let part2_faces =  cubes.len() * 6 - cubes.iter().map(|c| c.neighbours().iter().filter(|c| cubes.contains(c)).count()).sum::<usize>();
+    let part2_faces =  visible_faces(&cubes);
     (part1,part2_faces)
+
+
 }
 
+fn visible_faces(cubes: &HashSet<Coordinate3d<i32>>) -> usize {
+    cubes.len() * 6 - cubes.iter().map(|c| c.neighbours().iter().filter(|c| cubes.contains(c)).count()).sum::<usize>()
+}
 
 #[cfg(test)]
 mod tests {
