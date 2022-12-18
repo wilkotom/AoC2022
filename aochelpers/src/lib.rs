@@ -247,9 +247,10 @@ impl<T: Integer + Copy> Coordinate3d<T> {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct Cuboid<T> {
-    top_left_back: Coordinate3d<T>,
-    bottom_right_front: Coordinate3d<T>
+    pub top_left_back: Coordinate3d<T>,
+    pub bottom_right_front: Coordinate3d<T>
 }
 
 impl<T: Integer + Copy> Cuboid<T> {
@@ -272,6 +273,12 @@ impl<T: Integer + Copy> Cuboid<T> {
         } else {
             Some(Cuboid{ top_left_back: other.top_left_back, bottom_right_front: self.bottom_right_front })
         }
+    }
+
+    pub fn contains(&self, point: &Coordinate3d<T>) -> bool {
+        point.x >= self.top_left_back.x && point.x <= self.bottom_right_front.x &&
+        point.y >= self.top_left_back.y && point.y <= self.bottom_right_front.y &&
+        point.z >= self.top_left_back.z && point.z <= self.bottom_right_front.z
     }
 }
 
