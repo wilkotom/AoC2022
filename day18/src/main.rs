@@ -18,11 +18,8 @@ fn solution(data: &str) -> (usize,usize) {
     }
 
     let visible_faces =  cubes.len() * 6 - cubes.iter().map(|c| c.neighbours().iter().filter(|c| cubes.contains(c)).count()).sum::<usize>();
-
     let part1 = visible_faces;
-
     let mut cloud = cubes.clone();
-
     let bounding_box = Cuboid{
         top_left_back: Coordinate3d { x: cubes.iter().map(|c| c.x).min().unwrap(),  
                                       y: cubes.iter().map(|c| c.y).min().unwrap(), 
@@ -46,7 +43,7 @@ fn solution(data: &str) -> (usize,usize) {
             cloud.insert(point);
         }
     }
-
+    
     for x in bounding_box.top_left_back.x..bounding_box.bottom_right_front.x {
         for y in bounding_box.top_left_back.y..bounding_box.bottom_right_front.y {
             for z in  bounding_box.top_left_back.z..bounding_box.bottom_right_front.z {
@@ -57,16 +54,6 @@ fn solution(data: &str) -> (usize,usize) {
         }
     }
     let part2_faces =  cubes.len() * 6 - cubes.iter().map(|c| c.neighbours().iter().filter(|c| cubes.contains(c)).count()).sum::<usize>();
-
-    // let mut part2_faces = cubes.len() *6;
-    // for cube in cubes.iter() {
-    //     for neighbour in cube.neighbours() {
-    //         if cubes.contains(&neighbour) {
-    //             part2_faces -=1;
-    //         }
-    //     }
-    // }
-    println!("{} {}", part1, part2_faces);
     (part1,part2_faces)
 }
 
