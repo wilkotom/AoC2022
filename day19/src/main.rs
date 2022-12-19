@@ -70,7 +70,7 @@ fn set_robots_to_work(blueprint: &Blueprint, time_limit: i32) -> i32 {
     let mut unseen = VecDeque::new();
     let starting_state = GameState::new();
     let mut best_geodes = 0;
-
+    let mut most_geode_robots = 0;
     unseen.push_back(starting_state);
 
     let mut seen_states = HashSet::new();
@@ -82,12 +82,13 @@ fn set_robots_to_work(blueprint: &Blueprint, time_limit: i32) -> i32 {
                               blueprint.geode_robot_cost.0].iter().max().unwrap();
 
     while let Some(mut state) = unseen.pop_front() {
-        best_geodes = best_geodes.max(state.geodes);
         let mut cacheable_state = state;
         cacheable_state.time = 0;
-        if state.geodes < best_geodes -1  || seen_states.contains(&cacheable_state) || state.time == time_limit {
+        if state.geode_robots < most_geode_robots || seen_states.contains(&cacheable_state) || state.time == time_limit {
+            best_geodes = best_geodes.max(state.geodes);
             continue;
-        };
+        }
+        most_geode_robots = most_geode_robots.max(state.geode_robots);
 
         seen_states.insert(cacheable_state);
 
@@ -98,32 +99,36 @@ fn set_robots_to_work(blueprint: &Blueprint, time_limit: i32) -> i32 {
             next_state.robots_dig();
             next_state.geode_robots +=1;
             unseen.push_back(next_state);
-        } else {
-            if state.ore >= blueprint.ore_robot_cost && state.ore_robots < max_ore_cost {
-                let mut next_state = state;
-                next_state.ore -= blueprint.ore_robot_cost;
-                next_state.robots_dig();
-                next_state.ore_robots +=1;
-                unseen.push_back(next_state);
-            }
-            if state.ore >= blueprint.clay_robot_cost  && state.clay_robots < blueprint.obsidian_robot_cost.1 {
-                let mut next_state = state;
-                next_state.ore -= blueprint.clay_robot_cost;
-                next_state.robots_dig();
-                next_state.clay_robots +=1;
-                unseen.push_back(next_state);
-            }
-            if state.ore >= blueprint.obsidian_robot_cost.0 &&  state.clay >= blueprint.obsidian_robot_cost.1 {
-                let mut next_state = state;
-                next_state.ore -= blueprint.obsidian_robot_cost.0;
-                next_state.clay -= blueprint.obsidian_robot_cost.1;
-                next_state.robots_dig();
-                next_state.obsidian_robots +=1;
-                unseen.push_back(next_state);
-            }
-            state.robots_dig();
-            unseen.push_back(state);
+            continue;
         }
+
+        if state.ore >= blueprint.ore_robot_cost && state.ore_robots < max_ore_cost {
+            let mut next_state = state;
+            next_state.ore -= blueprint.ore_robot_cost;
+            next_state.robots_dig();
+            next_state.ore_robots +=1;
+            unseen.push_back(next_state);
+
+        }
+        if state.ore >= blueprint.clay_robot_cost && state.clay_robots < blueprint.obsidian_robot_cost.1 {
+            let mut next_state = state;
+            next_state.ore -= blueprint.clay_robot_cost;
+            next_state.robots_dig();
+            next_state.clay_robots +=1;
+            unseen.push_back(next_state);
+
+        }
+        if state.ore >= blueprint.obsidian_robot_cost.0 && state.clay >= blueprint.obsidian_robot_cost.1 {
+            let mut next_state = state;
+            next_state.ore -= blueprint.obsidian_robot_cost.0;
+            next_state.clay -= blueprint.obsidian_robot_cost.1;
+            next_state.robots_dig();
+            next_state.obsidian_robots +=1;
+            unseen.push_back(next_state);
+
+        }
+        state.robots_dig();
+        unseen.push_back(state);
     }
 
     best_geodes
