@@ -49,7 +49,7 @@ fn part2(mountain: &Mountain) -> Option<usize> {
     /* We want the lowest point that has the shortest path to the target. 
        Flip the map so that "E" and "z" are the lowest points,
        so we can find the closest point at level "a".
-       Set start point to be original and, and endpoint as "don't care". */
+       Set start point to be original end, and endpoint as "don't care". */
 
     let ground_map = mountain.ground_map.iter()
         .map(|(a,b)| (*a, 27-b))

@@ -22,7 +22,6 @@ fn part2(grid: &HashMap<Coordinate<usize>, usize>, bounds: &Coordinate<usize>) -
 
 fn is_visible(loc: &Coordinate<usize>, grid:&HashMap<Coordinate<usize>, usize>, bounds: &Coordinate<usize>) -> bool{
     let current_height = grid.get(loc).unwrap();
-
     (0..loc.x).all(|x| grid.get(&Coordinate{x, y: loc.y}).unwrap() < current_height) ||
     (0..loc.y).all(|y| grid.get(&Coordinate{x: loc.x, y}).unwrap() < current_height) ||
     (loc.x+1..=bounds.x).all(|x| grid.get(&Coordinate{x, y: loc.y}).unwrap() < current_height) ||

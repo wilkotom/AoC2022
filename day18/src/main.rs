@@ -1,4 +1,4 @@
-use std::{collections::{HashSet, VecDeque, HashMap}, io::Error};
+use std::{collections::{HashSet, VecDeque}, io::Error};
 use aochelpers::{Coordinate3d, Cuboid};
 
 fn main() -> Result<(), Error> {

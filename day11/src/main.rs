@@ -37,9 +37,9 @@ fn solution(mut monkeys: Vec<Monkey>, cycles: usize, part1:bool) -> i128 {
         addition or multiplication, there will be many numbers for which all monkeys behave 
         the same way.
 
-        Each of the monkeys applies a simple function, such as addition or multiplication,
-        then divides by a particular prime; hence we can multiply each of these numbers 
-        together to get the point at which the rule behaviour repeats.
+        Each of the monkeys applies a simple function, then divides by a particular prime; 
+        hence we can multiply each of these numbers together to get the point at which the 
+        rule behaviour repeats.
 
         For each possible worry level, if f is the operation the monkey applies,
 
@@ -66,10 +66,10 @@ fn solution(mut monkeys: Vec<Monkey>, cycles: usize, part1:bool) -> i128 {
                 }
 
             }
-            monkeys[i].items = Vec::new();
+            monkeys[i].items.truncate(0);
         }
     }
-    inspection_count.sort_by(|a,b| b.cmp(&a));
+    inspection_count.sort_by(|a,b| b.cmp(a));
     inspection_count[0] * inspection_count[1]
 }
 
@@ -132,14 +132,14 @@ Monkey 3:
     #[test]
     fn test_day1() {
         let monkeys = DATA.split("\n\n").map(parse_monkey).collect::<Vec<_>>();
-        let part1 = solution(monkeys.clone(), 20, true);
+        let part1 = solution(monkeys, 20, true);
         assert_eq!(part1,10605);
     }
 
     #[test]
     fn test_part2() {
         let monkeys = DATA.split("\n\n").map(parse_monkey).collect::<Vec<_>>();
-        let part2 = solution(monkeys.clone(), 10000, false);
+        let part2 = solution(monkeys, 10000, false);
         assert_eq!(part2, 2713310158);
     }
 }

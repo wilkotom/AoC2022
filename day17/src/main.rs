@@ -89,7 +89,6 @@ fn rock_tetris(data: &str,  rounds: i128) -> i128 {
         // Skip the first 1000 rounds as we seem to see some odd loops before 
         // things stabilise
         if round > 1000 {
-
             let mut depths = vec![];
             for x in 0..7 {
                 if arena.contains(&Coordinate{x, y: starting_y - 4}) {

@@ -45,7 +45,7 @@ fn solution(instructions: &Vec<Step>, rope_length: usize) -> usize {
             };
             for knot in 1..rope_length {
                 let prev = *rope.get(knot-1).unwrap();
-                let mut next_knot = rope.get_mut(knot).unwrap();
+                let next_knot = rope.get_mut(knot).unwrap();
                 if prev != *next_knot && !prev.extended_neighbours().contains(next_knot) {
                     next_knot.x += (prev.x - next_knot.x as i32).signum();
                     next_knot.y += (prev.y - next_knot.y as i32).signum();
@@ -82,7 +82,6 @@ U 20
     #[test]
     fn test_part_1 (){
         let instructions = DATA_1.lines().map(|l| l.parse::<Step>().unwrap()).collect::<Vec<_>>();
-        println!("{:?}", instructions);
         assert_eq!(solution(&instructions,2), 13)
     }
 
@@ -91,7 +90,6 @@ U 20
     #[test]
     fn test_part_2() {
         let instructions = DATA_2.lines().map(|l| l.parse::<Step>().unwrap()).collect::<Vec<_>>();
-        println!("{:?}", instructions);
         assert_eq!(solution(&instructions,10), 36)
     }
 
