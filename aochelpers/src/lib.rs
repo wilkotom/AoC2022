@@ -323,3 +323,4 @@ pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where
 
     grid
 }
+
