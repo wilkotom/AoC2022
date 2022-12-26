@@ -1,19 +1,18 @@
 use std::{collections::BinaryHeap, io::Error};
 use aochelpers::{Coordinate,ScoredItem};
-use std::collections::{HashMap, HashSet};
+use hashbrown::{HashMap, HashSet};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 fn main() -> Result<(), Error> {
     let data = std::fs::read_to_string("./day24/input.txt")?;
-    let mountain = parse_data(&data);
-    let mut stage_2_mountain = mountain.clone();
-    let mut stage_3_mountain = mountain.clone();
-    let mut snow_cache = HashMap::new();
-    let stage_2_start = get_off_the_mountain(mountain, false, &mut snow_cache); 
-    println!("Part 1: {}", stage_2_start);
-    stage_2_mountain.start_time = stage_2_start;
-    let stage_3_start = get_off_the_mountain(stage_2_mountain, true, &mut snow_cache); 
-    stage_3_mountain.start_time = stage_3_start;
-    println!("Part 2: {}", get_off_the_mountain(stage_3_mountain, false, &mut snow_cache)); 
+    let mut mountain = parse_data(&data);
+    get_off_the_mountain(&mut mountain);
+    println!("Part 1: {}", mountain.current_time);
+    get_off_the_mountain(&mut mountain);
+    get_off_the_mountain(&mut mountain);
+    println!("Part 2: {}", mountain.current_time);
+
     Ok(())
 }
 
@@ -31,36 +30,27 @@ struct Wind {
     direction: Direction
 }
 
+type BlizzardCache = HashMap<(Coordinate<i32>, i32),bool>;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct GameState {
     start: Coordinate<i32>,
     winds: Vec<Wind>,
     target: Coordinate<i32>,
-    start_time: i32
+    current_time: i32,
+    reverse_path: bool,
+    blizzard_cache: Rc<RefCell<BlizzardCache>>
 }
 
-impl Ord for GameState {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.start.cmp(&other.start)
-    }
-}
 
-impl PartialOrd for GameState {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-fn get_off_the_mountain(mountain: GameState, swap_ends: bool, cache: &mut HashMap<(Coordinate<i32>, i32),bool>) -> i32{
-
+fn get_off_the_mountain(mountain: &mut GameState) -> Option<i32>{
     let mut states = BinaryHeap::new();
-    let starting_state = if ! swap_ends { 
-        ScoredItem{ cost: mountain.start_time, item: mountain.start}
+    let starting_state = if ! mountain.reverse_path { 
+        ScoredItem{ cost: mountain.current_time, item: (mountain.start, mountain.current_time)}
     } else {
-        ScoredItem{ cost: mountain.start_time, item: mountain.target}
+        ScoredItem{ cost: mountain.current_time, item: (mountain.target, mountain.current_time)}
     };
-
-    let target = if !swap_ends {
+    let target = if !mountain.reverse_path {
         mountain.target
     } else {
         mountain.start
@@ -69,32 +59,36 @@ fn get_off_the_mountain(mountain: GameState, swap_ends: bool, cache: &mut HashMa
     states.push(starting_state);
     let mut seen = HashSet::new();
     let cycle_time = lcm(mountain.target.x.max(mountain.start.x), (mountain.start.y -1).max(mountain.target.y -1));
-    let max_y = mountain.start.y.max(mountain.target.y);
+    let max_y = mountain.target.y;
     while let Some(state) = states.pop() {
-        if seen.contains(&(state.item, state.cost % cycle_time)) {
+        let (location, time) = state.item;
+        if seen.contains(&(location, time % cycle_time)) {
             continue;
         }
-
-        seen.insert((state.item, state.cost % cycle_time));
-        
-        if state.item == target {
-            return state.cost
+        seen.insert((location, time % cycle_time));
+        if location == target {
+            mountain.current_time = time;
+            mountain.reverse_path = !mountain.reverse_path;
+            return Some(time)
         }
-        let mut candidates = state.item.neighbours();
-        candidates.push(state.item);
+        let mut candidates = location.neighbours();
+        candidates.push(location);
         for candidate in candidates {
             if !((candidate.x == 0 || candidate.y == 0 && candidate != Coordinate{x:1, y:0}) ||
             (candidate.y == mountain.target.y && candidate.x != mountain.target.x) ||
             candidate.x == mountain.target.x +1 ||
             candidate.y < 0 || candidate.y > max_y) {
-                let winds = cache.entry((candidate, (state.cost +1) % cycle_time)).or_insert_with(|| is_snowy(candidate, &mountain, (state.cost +1) % cycle_time));
+                let mut cache = mountain.blizzard_cache.borrow_mut();
+                let winds = cache.entry((candidate, (time +1) % cycle_time)).or_insert_with(|| is_snowy(candidate, &mountain, (time +1) % cycle_time));
                 if ! *winds {
-                    states.push(ScoredItem{cost: state.cost +1, item: candidate})
+                    // Weight strongly in favour of distance to target; blizzards will likely significantly increase number of actual steps needed
+                    let heuristic = candidate.manhattan_distance(&target) *2 + time;
+                    states.push(ScoredItem{cost: heuristic, item: (candidate, time +1)});
                 }
             }
         }
     }
-    i32::MAX
+    None
 }
 
 
@@ -118,7 +112,12 @@ fn parse_data(data: &str) -> GameState {
             };
         }
     }
-    GameState { start: Coordinate {x: 1, y: 0}, winds, target: Coordinate {x: max_x as i32, y: max_y as i32}, start_time: 0 }
+    GameState { start: Coordinate {x: 1, y: 0}, 
+                winds, 
+                target: Coordinate {x: max_x as i32, y: max_y as i32}, 
+                current_time: 0, 
+                reverse_path: false, 
+                blizzard_cache:Rc::new(RefCell::new(HashMap::new()))}
 }
 
 fn is_snowy(location: Coordinate<i32>, state: &GameState, turn: i32) ->bool{
@@ -184,16 +183,12 @@ mod tests {
 
     #[test]
     fn test_day1() {
-        let mountain = parse_data(DATA);
-        let mut stage_2_mountain = mountain.clone();
-        let mut stage_3_mountain = mountain.clone();
-        let mut snow_cache = HashMap::new();
-        let stage_2_start = get_off_the_mountain(mountain, false, &mut snow_cache); 
-        assert_eq!(stage_2_start, 18);
-        stage_2_mountain.start_time = stage_2_start;
-        let stage_3_start = get_off_the_mountain(stage_2_mountain, true, &mut snow_cache); 
-        assert_eq!(stage_3_start, 41);
-        stage_3_mountain.start_time = stage_3_start;
-        assert_eq!(get_off_the_mountain(stage_3_mountain, false, &mut snow_cache), 54); 
+        let mut mountain = parse_data(DATA);
+        get_off_the_mountain(&mut mountain);
+        assert_eq!(mountain.current_time, 18);
+        get_off_the_mountain(&mut mountain);
+        assert_eq!(mountain.current_time, 41);
+        get_off_the_mountain(&mut mountain);
+        assert_eq!(mountain.current_time, 54);
     }
 }
