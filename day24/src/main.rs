@@ -39,25 +39,14 @@ struct GameState {
     start_time: i32
 }
 
-impl Ord for GameState {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.start.cmp(&other.start)
-    }
-}
-
-impl PartialOrd for GameState {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
 
 fn get_off_the_mountain(mountain: GameState, swap_ends: bool, cache: &mut HashMap<(Coordinate<i32>, i32),bool>) -> i32{
 
     let mut states = BinaryHeap::new();
     let starting_state = if ! swap_ends { 
-        ScoredItem{ cost: mountain.start_time, item: mountain.start}
+        ScoredItem{ cost: mountain.start_time, item: (mountain.start, mountain.start_time)}
     } else {
-        ScoredItem{ cost: mountain.start_time, item: mountain.target}
+        ScoredItem{ cost: mountain.start_time, item: (mountain.target, mountain.start_time)}
     };
 
     let target = if !swap_ends {
@@ -71,25 +60,26 @@ fn get_off_the_mountain(mountain: GameState, swap_ends: bool, cache: &mut HashMa
     let cycle_time = lcm(mountain.target.x.max(mountain.start.x), (mountain.start.y -1).max(mountain.target.y -1));
     let max_y = mountain.start.y.max(mountain.target.y);
     while let Some(state) = states.pop() {
-        if seen.contains(&(state.item, state.cost % cycle_time)) {
+        let (location, time) = state.item;
+        if seen.contains(&(location, time % cycle_time)) {
             continue;
         }
-
-        seen.insert((state.item, state.cost % cycle_time));
+        seen.insert((location, time % cycle_time));
         
-        if state.item == target {
-            return state.cost
+        if location == target {
+            return time
         }
-        let mut candidates = state.item.neighbours();
-        candidates.push(state.item);
+        let mut candidates = location.neighbours();
+        candidates.push(location);
         for candidate in candidates {
             if !((candidate.x == 0 || candidate.y == 0 && candidate != Coordinate{x:1, y:0}) ||
             (candidate.y == mountain.target.y && candidate.x != mountain.target.x) ||
             candidate.x == mountain.target.x +1 ||
             candidate.y < 0 || candidate.y > max_y) {
-                let winds = cache.entry((candidate, (state.cost +1) % cycle_time)).or_insert_with(|| is_snowy(candidate, &mountain, (state.cost +1) % cycle_time));
+                let winds = cache.entry((candidate, (time +1) % cycle_time)).or_insert_with(|| is_snowy(candidate, &mountain, (time +1) % cycle_time));
                 if ! *winds {
-                    states.push(ScoredItem{cost: state.cost +1, item: candidate})
+                    let heuristic = candidate.manhattan_distance(&target) *2 + time;
+                        states.push(ScoredItem{cost: heuristic, item: (candidate, time +1)});
                 }
             }
         }
