@@ -1,4 +1,5 @@
-use std::{ io::Error, str::FromStr, collections::{HashMap, VecDeque}};
+use std::{io::Error, str::FromStr, collections::{HashMap, VecDeque}};
+use itertools::Itertools;
 
 #[derive(Eq, PartialEq, Debug, Clone)]
 struct Valve {
@@ -42,78 +43,72 @@ fn main() -> Result<(), Error> {
     let distances = distances(&valves);
     let working_valves = valves.values()
         .filter(|v| v.flow_rate > 0)
-        .map(|v| v.name.clone())
+        .map(|v| &v.name)
         .collect::<Vec<_>>();
     println!("Part 1: {:?}", part1(&valves, &distances, &working_valves));
-    println!("Part 1: {:?}", part2(&valves, &distances, &working_valves));
+    println!("Part 2: {:?}", part2(&valves, &distances, &working_valves));
 
     Ok(())
 }
 
-fn part1(valves: &HashMap<String,Valve>,distances: &HashMap<String,HashMap<String,i64>>, working_valves: &[String]) -> i64 {
-
-    let mut unchecked = working_valves.iter().map(|v| vec![v.to_owned()]).collect::<VecDeque<_>>();
-
-    let mut best = 0;
-    while let Some(combo) = unchecked.pop_front() {
-        if let Some(score) = ordering_score(&combo, distances, valves, 30) {
-            best = best.max(score);
-            for next_valve in working_valves.iter().filter(|v| !combo.contains(v)) {
-                let mut next_combo = combo.clone();
-                next_combo.push(next_valve.to_string());
-                unchecked.push_back(next_combo);
-            }
-        }
-    }
-    best
+fn part1<'a>(valves: &HashMap<String,Valve>,distances: &HashMap<String,HashMap<String,i64>>, working_valves: &[&'a String]) -> i64 {
+    let start = "AA".to_string();
+    let mut cache: HashMap<(String, Vec<&String>, i64), Option<i64>> = HashMap::new();
+    best_path_for_valves(&start, working_valves, distances, valves, 30, &mut cache).unwrap()
 }
 
+fn part2<'a>(valves: &HashMap<String,Valve>,distances: &HashMap<String,HashMap<String,i64>>, working_valves: &[&'a String]) -> i64 {
 
-fn part2(valves: &HashMap<String,Valve>,distances: &HashMap<String,HashMap<String,i64>>, working_valves: &[String]) -> i64 {
-
-    let mut unchecked = working_valves.iter().map(|v| vec![v.to_owned()]).collect::<VecDeque<_>>();
-
+    let unchecked = working_valves.iter().map(|v| v.to_string()).collect::<Vec<_>>();
+    let start = "AA".to_string();
+    let mut best = 0;
+    let mut cache: HashMap<(String, Vec<&String>, i64), Option<i64>> = HashMap::new();
     let mut path_scores = Vec::new();
-    while let Some(combo) = unchecked.pop_front() {
-        if let Some(score) = ordering_score(&combo, distances, valves, 26) {
-            path_scores.push((combo.clone(), score));
-            for next_valve in working_valves.iter().filter(|v| !combo.contains(v)) {
-                let mut next_combo = combo.clone();
-                next_combo.push(next_valve.to_string());
-                unchecked.push_back(next_combo);
-            }
+    
+    for combination in unchecked.iter().combinations(working_valves.len() /2) {
+        if let Some(score) = best_path_for_valves(&start, &combination, distances, valves, 26, &mut cache) {
+            path_scores.push((combination, score));
         }
     }
-    let mut best = 0;
-    for (i, (left_path, left_path_score)) in path_scores.iter().enumerate().filter(|(_,(p,_))| p.len() >= working_valves.len() / 3) {
-        for (right_path, right_path_score) in path_scores[i+1..].iter().filter(|(p,_)| p.len() >= working_valves.len() / 3){
+
+    for (i, (left_path, left_path_score)) in path_scores.iter().enumerate() {
+        for (right_path, right_path_score) in path_scores[i+1..].iter(){
             if right_path.iter().all(|v| !left_path.contains(v)) {
                 let score = left_path_score + right_path_score;
                 best = best.max(score);
             }
         }
     }
+
     best
 }
 
 
-fn ordering_score(order: &Vec<String>,
+fn best_path_for_valves<'a>(start: &String, 
+    to_visit: &[&'a String],
     distances: &HashMap<String,HashMap<String,i64>>,
     valves: &HashMap<String,Valve>,
-    mut time: i64) -> Option<i64> {
-    let mut score = 0;
-    let mut now = "AA";
-    for next_location in order {
-        time -= distances.get(now)
-            .unwrap()
-            .get(next_location).unwrap() +1;
-        if time < 0 {
-            return None
-        }
-        score += time * valves.get(next_location).unwrap().flow_rate;
-        now = next_location;
+    time: i64,
+    cache: &mut HashMap<(String, Vec<&'a String>, i64), Option<i64>> ) -> Option<i64> {
+    let cache_key = (start.to_owned(), to_visit.to_vec(), time );
+    if let Some(entry) = cache.get(&cache_key) {
+        return *entry;
     }
-    Some(score)
+    let mut best_flowed = None;
+    for next_room in to_visit.iter() {
+        let time_taken =  distances.get(start).unwrap().get(*next_room).unwrap() +1;
+        if time_taken > time {
+            continue;
+        }
+        let mut flowed = (time - time_taken) * valves.get(*next_room).unwrap().flow_rate;
+        let unvisited = to_visit.iter().filter(|x| *x != next_room).map(|x| x.to_owned()).collect::<Vec<_>>();
+        if let Some(next_flowed) = best_path_for_valves(next_room, &unvisited, distances, valves, time - time_taken, cache) {
+            flowed += next_flowed
+        }
+        best_flowed = best_flowed.max(Some(flowed));
+    }
+    cache.insert(cache_key, best_flowed );
+    best_flowed
 }
 
 fn parse_data(data: &str) -> HashMap<String,Valve> {
@@ -170,7 +165,7 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         let distances = distances(&valves);
         let working_valves = valves.values()
             .filter(|v| v.flow_rate > 0)
-            .map(|v| v.name.clone())
+            .map(|v| &v.name)
             .collect::<Vec<_>>();
         assert_eq!(part1(&valves, &distances, &working_valves), 1651);
     }
@@ -181,7 +176,7 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
         let distances = distances(&valves);
         let working_valves = valves.values()
             .filter(|v| v.flow_rate > 0)
-            .map(|v| v.name.clone())
+            .map(|v| &v.name)
             .collect::<Vec<_>>();
         assert_eq!(part2(&valves, &distances, &working_valves), 1707);
     }
