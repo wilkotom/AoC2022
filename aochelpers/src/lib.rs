@@ -2,6 +2,26 @@ use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Orde
 use num::Integer;
 use hashbrown::HashMap;
 
+/* Compass directions */
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Direction {
+    NorthWest,
+    North,
+    NorthEast,
+    East,
+    SouthEast,
+    South,
+    SouthWest,
+    West
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Particle {
+    pub starting_point: Coordinate<i32>,
+    pub direction: Direction
+}
+
 /* Standard 2D Cartesian Coordinate. Used all over the place */
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Coordinate<T> {
@@ -108,7 +128,20 @@ impl<T: Integer + Copy> Coordinate<T> {
     pub fn manhattan_distance(&self, other: &Self) -> T  {
         self.x.max(other.x) - self.x.min(other.x) + self.y.max(other.y) - self.y.min(other.y)
     }
-    
+
+    pub fn neighbour(&self, direction: Direction) -> Self {
+        match direction {
+            Direction::NorthWest =>  Coordinate { x: self.x - num::one() , y: self.y - num::one() },
+            Direction::North =>  Coordinate { x: self.x, y: self.y - num::one() },
+            Direction::NorthEast => Coordinate { x: self.x + num::one() , y: self.y - num::one() },
+            Direction::East =>  Coordinate { x: self.x + num::one() , y: self.y },
+            Direction::SouthEast =>  Coordinate { x: self.x + num::one() , y: self.y + num::one() },
+            Direction::South => Coordinate { x: self.x  , y: self.y + num::one() },
+            Direction::SouthWest =>  Coordinate { x: self.x - num::one() , y: self.y + num::one() },
+            Direction::West => Coordinate { x: self.x - num::one() , y: self.y },
+        }
+    }
+
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
