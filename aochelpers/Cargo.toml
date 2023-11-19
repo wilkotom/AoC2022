@@ -2,6 +2,8 @@
 name = "aochelpers"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
+description = "A set of structs and associated methods that cover common use=cases when solving Advent Of Code problems."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
