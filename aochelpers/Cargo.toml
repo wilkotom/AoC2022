@@ -9,4 +9,4 @@ description = "A set of structs and associated methods that cover common use=cas
 
 [dependencies]
 num = "0.4.0"
-hashbrown = "*"
+hashbrown = "0.14.2"
