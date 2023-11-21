@@ -121,7 +121,7 @@ impl<T: Integer + Copy> Coordinate<T> {
             Coordinate{x: self.x + num::one(), y: self.y + num::one()},
         ]
     }
-    /// Returns all co-ordinates directly neighbouring the square on an alternating hex grid
+    /// Returns all co-ordinates directly neighbouring the square on an alternating hex grid:
     /// ```text
     ///   1 2
     ///  3 X 4
@@ -316,14 +316,14 @@ impl<T: Integer + Copy> Cuboid<T> {
         Self { top_left_back, bottom_right_front }
     }
 
-    /// If the supplied `Cuboid` intersects with this, returns the cuboid defined by the intersection points between the two. Otherwise return `None`
+    /// If the supplied `Cuboid` intersects with this one, returns the cuboid defined by the intersection points between the two. Otherwise return `None`
     pub fn intersection(&self, other: &Self) -> Option<Self> {
-        if self.top_left_back.x > other.bottom_right_front.x || other.top_left_back.x > self.bottom_right_front.x ||
-           self.top_left_back.y > other.bottom_right_front.y || other.top_left_back.y > self.bottom_right_front.y  || 
-           self.top_left_back.z > other.bottom_right_front.z || other.top_left_back.z > self.bottom_right_front.z {
-            None
+        if self.contains(&other.top_left_back) {
+            Some(Cuboid { top_left_back: other.top_left_back, bottom_right_front: self.bottom_right_front})
+        } else if other.contains(&self.top_left_back) {
+            Some(Cuboid { top_left_back: self.top_left_back, bottom_right_front: other.bottom_right_front })
         } else {
-            Some(Cuboid::new(other.top_left_back, self.bottom_right_front))
+            None
         }
     }
     /// Does the cuboid contain the specified point in space?
@@ -360,15 +360,22 @@ impl<N: Ord+ PartialOrd, T: Ord + PartialOrd> PartialOrd for ScoredItem<N, T> {
 
 
 /// Parses a grid of digits in the form of a string to a HashMap<Coordinate, T>
-/// The Y value represents the line number, so increases down the page.
-/// Example usage: `parse_number_grid::&lt;i32&gt;("12\n34")`will return a 
-/// HashMap&lt;Coordinate&lt;usize&gt;, i32&gt;
-/// the following key, value pairs:
 /// 
-/// Coordinate&lt;i32&gt;{X:0, Y:0} =&gt; 1 
-/// Coordinate&lt;i32&gt;{X:1, Y:0} =&gt; 2
-/// Coordinate&lt;i32&gt;{X:0, Y:1} =&gt; 3 
-/// Coordinate&lt;i32&gt;{X:1, Y:2} =&gt; 4
+/// The Y value represents the line number, so increases down the page.
+/// 
+/// Example usage: 
+/// 
+/// `parse_number_grid::<i32>("12\n34")`
+/// 
+/// will return a `HashMap<Coordinate<usize>, i32>` equivalent to:
+/// ```
+/// HashMap::from([
+///     (Coordinate<i32>{X:0, Y:0}, 1),
+///     (Coordinate<i32>{X:1, Y:0}, 2),
+///     (Coordinate<i32>{X:0, Y:1}, 3),
+///     (Coordinate<i32>{X:1, Y:2}, 4)
+/// ])
+/// ```
 pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where 
         T: FromStr, 
         <T as FromStr>::Err: Debug  {
