@@ -369,12 +369,18 @@ impl<N: Ord+ PartialOrd, T: Ord + PartialOrd> PartialOrd for ScoredItem<N, T> {
 /// 
 /// will return a `HashMap<Coordinate<usize>, i32>` equivalent to:
 /// ```
-/// HashMap::from([
-///     (Coordinate<usize>{X:0, Y:0}, 1),
-///     (Coordinate<usize>{X:1, Y:0}, 2),
-///     (Coordinate<usize>{X:0, Y:1}, 3),
-///     (Coordinate<usize>{X:1, Y:2}, 4)
-/// ])
+/// # #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+/// # pub struct Coordinate<T> {
+/// # pub x: T,
+/// # pub y: T }
+/// #
+/// # use hashbrown::HashMap;
+/// HashMap::<Coordinate<usize>,i32>::from([
+///     (Coordinate{x:0, y:0}, 1),
+///     (Coordinate{x:1, y:0}, 2),
+///     (Coordinate{x:0, y:1}, 3),
+///     (Coordinate{x:1, y:2}, 4)
+/// ]);
 /// ```
 pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where 
         T: FromStr, 
