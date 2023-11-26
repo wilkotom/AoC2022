@@ -454,6 +454,9 @@ pub fn get_daily_input(day: i32, year: i32) -> Result<String> {
                 file.write_all(response_text.as_bytes())?;
                 Ok(response_text)
             } else {
+                let mut file: File = File::create(path)?;
+                file.write_all(res.status().as_str().as_bytes())?;
+
                 Err(anyhow!("Response was {}", res.status()))
             }
         }
