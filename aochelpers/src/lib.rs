@@ -1,4 +1,5 @@
-use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Ordering, str::FromStr};
+use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Ordering, str::FromStr, fs::{self, File}, env, io::Write, path::PathBuf};
+use anyhow::{anyhow, Result};
 use num::Integer;
 use hashbrown::HashMap;
 
@@ -398,3 +399,77 @@ pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where
     grid
 }
 
+/// Retrieves and caches a day's input, returning it as a string
+/// 
+/// This helper function follows the [automation guidelines on the /r/adventofcode community wiki](https://www.reddit.com/r/adventofcode/wiki/faqs/automation).
+/// 
+/// Specifically:
+/// `get_daily_input()` will attempt only one time to download any given input file
+/// That file is stored locally on an indefinite basis and must be manually deleted
+/// in the event that the download is corrupt; no automatic retry logic is provided.
+/// 
+/// The download file will be stored in `$HOME/.aochelpers/year/day`. Should this
+/// file already exist, no download will be attempted.
+/// 
+/// In the event that the input cannot be downloaded, the error message will instead be
+/// written to the input file, preventing further download attempts
+/// 
+/// The `User-Agent` header is set to `Rust AoCHelpers: docs.rs/aochelpers/latest/aochelpers/fn.get_daily_input.html by wilkotom@sleepawaytheafternoon.uk`
+/// 
+/// Session token is determined by the contents of `$HOME/.aochelpers/token` if it exists;
+/// if it does not, this file will be created from the contents of the `AOCTOKEN` 
+/// environment variable, if any.
+
+
+pub fn get_daily_input(day: i32, year: i32) -> Result<String> {
+    if let Some(mut path) = dirs::home_dir() {
+        let rel_path = [".aochelpers", &year.to_string()];
+        for element in rel_path {
+            path.push(element);
+            if let Ok(metadata) = fs::metadata(&path) {
+                if !metadata.is_dir(){
+                    return  Err(anyhow!("Path {} exists, but is not a directory", path.display()));
+                }
+            }
+        }
+        path.push(day.to_string());
+        if let Ok(content) = std::fs::read_to_string(&path) {
+            Ok(content)
+        } else {
+            let mut token_path = path.clone();
+            token_path.pop();
+            token_path.pop();
+            token_path.push("token");
+            let token = get_or_create_file(&token_path, "AOCTOKEN")?;
+            let client = reqwest::blocking::Client::builder()
+                .user_agent("Rust AoCHelpers: docs.rs/aochelpers/latest/aochelpers/fn.get_daily_input.html by wilkotom@sleepawaytheafternoon.uk")
+                .build()?;
+            let res = client.get(format!("https://adventofcode.com/{}/day/{}/input", year, day))
+                .header("Cookie", format!("session={}", token))
+                .send()?;
+
+            if res.status().is_success() {
+                let response_text = res.text()?;
+                let mut file: File = File::create(path)?;
+                file.write_all(response_text.as_bytes())?;
+                Ok(response_text)
+            } else {
+                Err(anyhow!("Response was {}", res.status()))
+            }
+        }
+    } else {
+        Err(anyhow!("Couldn't determine home directory"))
+    }
+}
+
+fn get_or_create_file(path: &PathBuf, env_var: &str) -> Result<String> {
+    if let Ok(contents) = std::fs::read_to_string(path) {
+        Ok(contents)
+    } else if let Ok(contents) = env::var(env_var) {
+        let mut file: File = File::create(path)?;
+        file.write_all(contents.as_bytes())?;
+        Ok(contents)
+    } else {
+        Err(anyhow!("Can't determine setting from {} or {}", path.display(), env_var))
+    }
+}
