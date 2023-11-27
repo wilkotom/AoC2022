@@ -1,7 +1,7 @@
-use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Ordering, str::FromStr, fs::{self, File}, env, io::Write, path::PathBuf};
-use anyhow::{anyhow, Result};
+use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Ordering, str::FromStr, fs::{self, File}, env, io::{Write, ErrorKind}, path::PathBuf, error::Error};
 use num::Integer;
 use hashbrown::HashMap;
+use log::warn;
 
 /// Compass directions
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -421,26 +421,30 @@ pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where
 /// environment variable, if any.
 
 
-pub fn get_daily_input(day: i32, year: i32) -> Result<String> {
+pub fn get_daily_input(day: i32, year: i32) -> Result<String, Box<dyn Error>> {
     if let Some(mut path) = dirs::home_dir() {
         let rel_path = [".aochelpers", &year.to_string()];
         for element in rel_path {
             path.push(element);
             if let Ok(metadata) = fs::metadata(&path) {
                 if !metadata.is_dir(){
-                    return  Err(anyhow!("Path {} exists, but is not a directory", path.display()));
+                    return  Err(Box::new(
+                        std::io::Error::new(ErrorKind::Other, format!("Path {} exists, but is not a directory", path.display()))
+                    ));
                 }
             }
         }
         path.push(day.to_string());
-        if let Ok(content) = std::fs::read_to_string(&path) {
+        if let Ok(mut content) = std::fs::read_to_string(&path) {
+            remove_newlines(&mut content);
             Ok(content)
         } else {
+            warn!("Fetching puzzle input for {} day {} from remote server", year,day);
             let mut token_path = path.clone();
             token_path.pop();
             token_path.pop();
             token_path.push("token");
-            let token = get_or_create_file(&token_path, "AOCTOKEN")?;
+            let token = get_or_create_setting_file(&token_path, "AOCTOKEN")?;
             let client = reqwest::blocking::Client::builder()
                 .user_agent("Rust AoCHelpers: docs.rs/aochelpers/latest/aochelpers/fn.get_daily_input.html by wilkotom@sleepawaytheafternoon.uk")
                 .build()?;
@@ -449,23 +453,23 @@ pub fn get_daily_input(day: i32, year: i32) -> Result<String> {
                 .send()?;
 
             if res.status().is_success() {
-                let response_text = res.text()?;
+                let mut response_text = res.text()?;
+                remove_newlines(&mut response_text);
                 let mut file: File = File::create(path)?;
                 file.write_all(response_text.as_bytes())?;
                 Ok(response_text)
             } else {
                 let mut file: File = File::create(path)?;
                 file.write_all(res.status().as_str().as_bytes())?;
-
-                Err(anyhow!("Response was {}", res.status()))
+                Err(Box::new(std::io::Error::new(ErrorKind::Other, format!("Response was {}", res.status()))))
             }
         }
     } else {
-        Err(anyhow!("Couldn't determine home directory"))
+        Err(Box::new(Box::new(std::io::Error::new(ErrorKind::Other,"Couldn't determine home directory"))))
     }
 }
 
-fn get_or_create_file(path: &PathBuf, env_var: &str) -> Result<String> {
+fn get_or_create_setting_file(path: &PathBuf, env_var: &str) -> Result<String, Box<dyn Error>> {
     if let Ok(contents) = std::fs::read_to_string(path) {
         Ok(contents)
     } else if let Ok(contents) = env::var(env_var) {
@@ -473,6 +477,18 @@ fn get_or_create_file(path: &PathBuf, env_var: &str) -> Result<String> {
         file.write_all(contents.as_bytes())?;
         Ok(contents)
     } else {
-        Err(anyhow!("Can't determine setting from {} or {}", path.display(), env_var))
+        Err(Box::new(
+            std::io::Error::new(
+                ErrorKind::Other, format!("Can't determine setting from {} or {}", path.display(), env_var))
+        ))
+    }
+}
+
+fn remove_newlines(s: &mut String) {
+    while s.ends_with('\n') {
+        s.pop();
+        if s.ends_with('\r') {
+            s.pop();
+        }
     }
 }
