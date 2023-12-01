@@ -36,7 +36,6 @@ pub struct Coordinate<T> {
     pub y: T,
 }
 /// Renders Coordinate as `(x,y)`
-/// Y values are treated as more significant than X values; this preserves the _reading order_ used in a number of puzzles.
 impl<T: Display> Display for Coordinate<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "({},{})", self.x, self.y)
@@ -76,14 +75,13 @@ impl<T: SubAssign> SubAssign for Coordinate<T> {
         self.y -= other.y;
     }
 }
-
+/// Y values are treated as more significant than X values; this preserves the _reading order_ used in a number of puzzles.
 impl<T: Eq + PartialEq + Ord + Copy> Ord for Coordinate<T> {
     // Reading order: Y then X
     fn cmp(&self, other: &Self) -> Ordering {
        (self.y, self.x).cmp(&(other.y, other.x))
     }
 }
-
 impl<T: Ord + PartialOrd> PartialOrd for Coordinate<T> where T: std::marker::Copy {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
@@ -442,6 +440,7 @@ pub fn get_daily_input(day: i32, year: i32) -> Result<String, Box<dyn Error>> {
             warn!("Fetching puzzle input for {} day {} from remote server", year,day);
             let mut token_path = path.clone();
             token_path.pop();
+            fs::create_dir_all(&token_path)?;
             token_path.pop();
             token_path.push("token");
             let token = get_or_create_setting_file(&token_path, "AOCTOKEN")?;
@@ -455,6 +454,9 @@ pub fn get_daily_input(day: i32, year: i32) -> Result<String, Box<dyn Error>> {
             if res.status().is_success() {
                 let mut response_text = res.text()?;
                 remove_newlines(&mut response_text);
+                let mut dir_path: PathBuf = path.clone();
+                dir_path.pop();
+                fs::create_dir_all(dir_path)?;        
                 let mut file: File = File::create(path)?;
                 file.write_all(response_text.as_bytes())?;
                 Ok(response_text)
