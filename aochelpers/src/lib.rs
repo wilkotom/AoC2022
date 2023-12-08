@@ -397,6 +397,31 @@ pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where
     grid
 }
 
+/// Returns the lowest common multiple of two numbers
+pub fn lcm<T: Integer + Copy>(first: T , second: T) -> T {
+    first * second / gcd(first, second)
+}
+
+/// Returns the greatest common divisor of two numbers
+pub fn gcd<T: Integer + Copy >(first: T, second: T) -> T {
+    let mut max = first;
+    let mut min = second;
+    if min > max {
+        (min, max) = (max,min)
+    }
+
+    loop {
+        let res = max % min;
+        if res == num::zero() {
+            return min;
+        }
+        max = min;
+        min = res;
+    }
+}
+
+
+
 /// Retrieves and caches a day's input, returning it as a string
 /// 
 /// This helper function follows the [automation guidelines on the /r/adventofcode community wiki](https://www.reddit.com/r/adventofcode/wiki/faqs/automation).

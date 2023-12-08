@@ -1,6 +1,6 @@
 [package]
 name = "aochelpers"
-version = "0.3.3"
+version = "0.4.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "A set of structs and associated methods that cover common use=cases when solving Advent Of Code problems."
