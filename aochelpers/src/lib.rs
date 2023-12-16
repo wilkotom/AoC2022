@@ -4,7 +4,7 @@ use hashbrown::HashMap;
 use log::warn;
 
 /// Compass directions
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Direction {
     NorthWest,
     North,

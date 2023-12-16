@@ -36,6 +36,13 @@ fn sub_assign_coordinates() {
     assert_eq!(base, expected);
 }
 
+#[test]
+fn directional_neighbour() {
+    assert_eq!(Coordinate{x:0,y:0}.neighbour(Direction::North), Coordinate{x:0, y:-1});
+    assert_eq!(Coordinate{x:0,y:0}.neighbour(Direction::South), Coordinate{x:0, y:1});
+    assert_eq!(Coordinate{x:0,y:0}.neighbour(Direction::East), Coordinate{x:1, y:0});
+    assert_eq!(Coordinate{x:0,y:0}.neighbour(Direction::West), Coordinate{x:-1, y:0});
+}
 
 #[test]
 fn neighbours_2d() {
