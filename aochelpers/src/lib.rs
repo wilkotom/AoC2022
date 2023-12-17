@@ -1,6 +1,5 @@
-use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, cmp::Ordering, str::FromStr, fs::{self, File}, env, io::{Write, ErrorKind}, path::PathBuf, error::Error};
+use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, hash::Hash, cmp::Ordering, str::FromStr, fs::{self, File}, env, io::{Write, ErrorKind}, path::PathBuf, error::Error, collections::HashMap};
 use num::Integer;
-use hashbrown::HashMap;
 use log::warn;
 
 /// Compass directions
@@ -35,6 +34,7 @@ pub struct Coordinate<T> {
     pub x: T,
     pub y: T,
 }
+
 /// Renders Coordinate as `(x,y)`
 impl<T: Display> Display for Coordinate<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -364,9 +364,9 @@ impl<N: Ord+ PartialOrd, T: Ord + PartialOrd> PartialOrd for ScoredItem<N, T> {
 /// 
 /// Example usage: 
 /// 
-/// `parse_number_grid::<i32>("12\n34")`
+/// `parse_number_grid::<i32, i32>("12\n34")`
 /// 
-/// will return a `HashMap<Coordinate<usize>, i32>` equivalent to:
+/// will return a `HashMap<Coordinate<i32>, i32>` equivalent to:
 /// ```
 /// # #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 /// # pub struct Coordinate<T> {
@@ -381,16 +381,17 @@ impl<N: Ord+ PartialOrd, T: Ord + PartialOrd> PartialOrd for ScoredItem<N, T> {
 ///     (Coordinate{x:1, y:2}, 4)
 /// ]);
 /// ```
-pub fn parse_number_grid<T>(data: &str) -> HashMap<Coordinate<usize>, T> where 
-        T: FromStr, 
-        <T as FromStr>::Err: Debug  {
+pub fn parse_number_grid<T, V>(data: &str) -> HashMap<Coordinate<T>, V> where 
+        T: Integer + Copy + TryFrom<usize> + Hash,
+        V: FromStr, 
+        <V as FromStr>::Err: Debug  {
 
-    let mut grid: HashMap<Coordinate<_>, T> = HashMap::new();
+    let mut grid: HashMap<Coordinate<T>, V> = HashMap::new();
 
     for (y, line) in data.split('\n').enumerate() {
         for (x, c) in line.chars().enumerate(){
-            
-            grid.insert( Coordinate{x, y}, String::from(c).parse::<T>().unwrap());
+            grid.insert( Coordinate{x: T::try_from(x).ok().unwrap(),  y: T::try_from(y).ok().unwrap()}, 
+                        String::from(c).parse::<V>().unwrap());
         }
     }
 
