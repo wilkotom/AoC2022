@@ -1,4 +1,4 @@
-use std::{fmt::{Debug,Display}, ops::{Add, Sub, AddAssign, SubAssign}, hash::Hash, cmp::Ordering, str::FromStr, fs::{self, File}, env, io::{Write, ErrorKind}, path::PathBuf, error::Error, collections::HashMap};
+use std::{fmt::{Debug,Display, self}, ops::{Add, Sub, AddAssign, SubAssign}, hash::Hash, cmp::Ordering, str::FromStr, fs::{self, File}, env, io::{Write, ErrorKind}, path::PathBuf, error::Error, collections::HashMap};
 use num::Integer;
 use log::warn;
 
@@ -315,16 +315,24 @@ impl<T: Integer + Copy> Cuboid<T> {
         Self { top_left_back, bottom_right_front }
     }
 
-    /// If the supplied `Cuboid` intersects with this one, returns the cuboid defined by the intersection points between the two. Otherwise return `None`
-    pub fn intersection(&self, other: &Self) -> Option<Self> {
-        if self.contains(&other.top_left_back) {
-            Some(Cuboid { top_left_back: other.top_left_back, bottom_right_front: self.bottom_right_front})
-        } else if other.contains(&self.top_left_back) {
-            Some(Cuboid { top_left_back: self.top_left_back, bottom_right_front: other.bottom_right_front })
-        } else {
-            None
-        }
-    }
+    // /// If the supplied `Cuboid` intersects with this one, returns the cuboid defined by the intersection points between the two. Otherwise return `None`
+    // pub fn intersection(&self, other: &Self) -> Option<Self> {
+    //     if self.contains(&other.top_left_back) {
+    //         Some(Cuboid { top_left_back: other.top_left_back, bottom_right_front: self.bottom_right_front})
+    //     } else if other.contains(&self.top_left_back) {
+    //         Some(Cuboid { top_left_back: self.top_left_back, bottom_right_front: other.bottom_right_front })
+    //     } else if self.contains(&Coordinate3d{x: other.top_left_back.x, y: other.top_left_back.y, z: other.bottom_right_front.z }) {
+    //         Some(Cuboid{
+    //             top_left_back: Coordinate3d{x: other.top_left_back.x, y: other.top_left_back.y, z: self.top_left_back.z },
+    //             bottom_right_front: Coordinate3d { x: other.bottom_right_front, y: (), z: () }
+    //         })
+    //         todo!()
+    //     } else if other.contains(&Coordinate3d{x: self.top_left_back.x, y: self.top_left_back.y, z: self.bottom_right_front.z }) {
+    //         todo!()
+    //     } else {
+    //         None
+    //     }
+    // }
     /// Does the cuboid contain the specified point in space?
     pub fn contains(&self, point: &Coordinate3d<T>) -> bool {
         point.x >= self.top_left_back.x && point.x <= self.bottom_right_front.x &&
@@ -518,5 +526,42 @@ fn remove_newlines(s: &mut String) {
         if s.ends_with('\r') {
             s.pop();
         }
+    }
+}
+
+/// Convenience-based struct converting typical AoC node labels consisting of numbers and
+/// letters to a numeric representation, saveing all that tedious mucking about with lifetimes.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
+pub struct Label {
+    value: usize
+}
+
+impl FromStr for Label {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> Result<Label, anyhow::Error> {
+        if s.is_empty() {
+            Ok(Self{value:0})
+        } else {
+            Ok(Self { value: usize::from_str_radix(s,36)? })
+        }
+    }
+}
+
+impl From<usize> for Label {
+    fn from(value: usize) -> Self {
+        Label { value }
+    }
+}
+
+impl Display for Label {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut digits = Vec::new();
+        let mut remainder = self.value;
+        while remainder > 0 {
+            let digit = char::from_digit((remainder % 36 ) as u32 , 36).unwrap();
+            digits.push(digit);
+            remainder /= 36;
+        }
+        write!(f, "{}", digits.iter().rev().collect::<String>())
     }
 }

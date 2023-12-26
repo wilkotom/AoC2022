@@ -1,5 +1,5 @@
-use aochelpers::*;
 use std::collections::HashMap;
+use aochelpers::*;
 
 #[test]
 fn add_coordinates() {
@@ -285,4 +285,59 @@ fn number_grid_row() {
 #[test]
 fn number_grid_col() {
     assert_eq!(parse_number_grid::<i32, i32>("1\n2"), HashMap::from([(Coordinate{x:0, y:0}, 1_i32), (Coordinate{x:0, y:1}, 2_i32)]))
+}
+
+#[test]
+fn construct_label_empty() {
+    let res = "".parse::<Label>();
+    assert!(res.is_ok());
+    let expected =  Label::from(0_usize);
+    let value = res.unwrap();
+    assert_eq!(&value, &expected);
+    assert_eq!(value.to_string(), "".to_string());
+}
+
+#[test]
+fn construct_label_number() {
+    let res = "12".parse::<Label>();
+    assert!(res.is_ok());
+    let expected =  Label::from(38);
+    let value = res.unwrap();
+    assert_eq!(&value, &expected);
+    assert_eq!(value.to_string(), "12".to_string());
+}
+
+#[test]
+fn construct_label_letter() {
+    let res = "a".parse::<Label>();
+    assert!(res.is_ok());
+    let expected =  Label::from(10);
+    let value = res.unwrap();
+    assert_eq!(&value, &expected);
+    assert_eq!(value.to_string(), "a".to_string());}
+
+#[test]
+fn construct_label_letters() {
+    let res = "az".parse::<Label>();
+    assert!(res.is_ok());
+    let value: Label = res.unwrap();
+
+    let expected =  Label::from(395);
+    assert_eq!(&value, &expected);
+    assert_eq!(value.to_string(), "az".to_string());}
+
+#[test]
+fn construct_label_caps() {
+    let res = "AZ".parse::<Label>();
+    assert!(res.is_ok());
+    let value: Label = res.unwrap();
+
+    let expected =  Label::from(395);
+    assert_eq!(&value, &expected);
+    assert_eq!(value.to_string(), "az".to_string());
+}
+#[test]
+fn construct_label_invalid() {
+    let res = "hello!".parse::<Label>();
+    assert!(res.is_err());
 }
