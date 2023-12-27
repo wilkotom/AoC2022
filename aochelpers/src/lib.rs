@@ -531,9 +531,23 @@ fn remove_newlines(s: &mut String) {
 
 /// Convenience-based struct converting typical AoC node labels consisting of numbers and
 /// letters to a numeric representation, saveing all that tedious mucking about with lifetimes.
+/// 
+/// Note that Labels are case-insensitive.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Label {
     value: usize
+}
+
+impl Label {
+    /// Returns true if the given character matches the end of this label.
+    /// Returns false if it does not.
+    pub fn ends_with(&self, c: char) -> bool {
+        if let Some(v) = c.to_digit(36) {
+            self.value % 36 == v as usize
+        } else {
+            false
+        }
+    }
 }
 
 impl FromStr for Label {

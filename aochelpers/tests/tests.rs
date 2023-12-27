@@ -341,3 +341,13 @@ fn construct_label_invalid() {
     let res = "hello!".parse::<Label>();
     assert!(res.is_err());
 }
+
+
+#[test]
+fn test_label_ends() {
+    let res = "AZ".parse::<Label>();
+    assert!(res.is_ok());
+    let value: Label = res.unwrap();
+    assert!(value.ends_with('z'));
+    assert!(!value.ends_with('a'))
+}
